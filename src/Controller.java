@@ -1,7 +1,7 @@
 public class Controller {
     
     double currentState = 0; //Current state of the system being controlled
-    double setPoint = 50; //Desired state of the system
+    final double setPoint = 50; //Desired state of the system
     double error = setPoint - currentState; //Error value of the current state; how far currentState is from the desired state (setPoint)
     double prevError = 0; //Error value from the previous iteration
     double cError = 0; //Cumulative error tally; all the errors added up over all iterations
@@ -18,10 +18,10 @@ public class Controller {
     int iterations = 1; //Just counts how many loops the controller has run
     int completeCounter = 0; //Used to check if the PID has gotten within threshold in a decided number of consecutive iterations (completeGoal)
     //If the PID is outside threshold then completeCounter is reset
-    int completeGoal = 10; //How many consecutive iterations the PID must be within threshold
-    double threshold = 0.001; //The error must be less than this number (and greater than its reciprocal) for completeCounter to be incremented
+    final int completeGoal = 10; //How many consecutive iterations the PID must be within threshold
+    final double threshold = 0.001; //The error must be less than this number (and greater than its reciprocal) for completeCounter to be incremented
 
-    public void resetValues(){
+    public void resetValues(){ //Reset every value that changes
         completeCounter = 0;
         iterations = 1;
         output = 0;
@@ -31,9 +31,21 @@ public class Controller {
         error = setPoint - currentState;
         currentState = 0;
     }
+    public void checkPID() { //Makes sure that P, I, or D are not set to 0; if so they are set to 0.1
+        if (P == 0) {
+            P = 0.1;
+        }
+        if (I == 0) {
+            I = 0.1;
+        }
+        if (D == 0) {
+            D = 0.1;
+        }
+    }
+
     public int runController(){
         resetValues();
-        while (error != 0 ) {
+        while (error != 0 && !Double.isNaN(error)) { //Only run the while loop if the error is not 0 and the error is a number (not NaN)
             //elapsedTime = currentTime - prevTime
 
             if (error < threshold && error > (threshold * -1)){ //Check if the error is within threshold
@@ -57,13 +69,16 @@ public class Controller {
 
             output = P * error + I * cError + D * errorRate; //Calculate the output to add to the current state
             
-            //System.out.println(error + ", " + prevError +  ", " + currentState + "," + errorRate + ", " + output + ", " + iterations); //Debug Log separated by commas for easy separation in spreadsheet software
+            System.out.println(error + ", " + prevError +  ", " + currentState + "," + errorRate + ", " + output + ", " + iterations); //Debug Log separated by commas for easy separation in spreadsheet software
             //System.out.println("Error " + error + "\nPrevError" + prevError +  "\nCurrentState " + currentState + "\nErrorRate " + errorRate + "\nOutput " + output ); //Debug Log easy to read in terminal; remove the '\n' to make it one line
 
             //Make sure to keep these lines below the Debug Log lines as they are just set up for the next iteration; everything would work fine if they were before the Log, but it would make the log give improper values
             prevError = error; //Set prevError to what the error just was
             iterations ++; //Increase iterations
             //prevTime = currentTime
+        }
+        if (Double.isNaN(error)){
+            System.out.println("ERROR IS NAN");
         }
         return iterations;
     }
